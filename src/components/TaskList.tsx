@@ -2,19 +2,64 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import TaskBadges from "@/components/TaskBadges";
 
 interface Task {
   id: string;
   title: string;
   completed: boolean;
   created_at: string;
+  priority: 'low' | 'medium' | 'high' | null;
+  due_date: string | null;
+  due_time: string | null;
+  category: string | null;
+  description: string | null;
+  updated_at: string | null;
 }
 
 const TaskList = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sortBy, setSortBy] = useState<'priority' | 'due_date' | 'created_at'>('priority');
   const { toast } = useToast();
+
+  // Advanced sorting function: Priority → Due Date → Creation Time
+  const sortTasks = (tasksToSort: Task[]) => {
+    return [...tasksToSort].sort((a, b) => {
+      // First, separate completed from uncompleted tasks
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1; // Uncompleted tasks first
+      }
+
+      // Priority sorting (high > medium > low > null)
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      const aPriority = a.priority ? priorityOrder[a.priority] : 0;
+      const bPriority = b.priority ? priorityOrder[b.priority] : 0;
+      
+      if (aPriority !== bPriority) {
+        return bPriority - aPriority; // Higher priority first
+      }
+
+      // Due date sorting (sooner dates first, null dates last)
+      if (a.due_date && b.due_date) {
+        const aDate = new Date(a.due_date).getTime();
+        const bDate = new Date(b.due_date).getTime();
+        if (aDate !== bDate) {
+          return aDate - bDate; // Sooner dates first
+        }
+      } else if (a.due_date && !b.due_date) {
+        return -1; // Tasks with due dates come first
+      } else if (!a.due_date && b.due_date) {
+        return 1; // Tasks with due dates come first
+      }
+
+      // Finally, sort by creation time (newest first)
+      const aTime = new Date(a.created_at).getTime();
+      const bTime = new Date(b.created_at).getTime();
+      return bTime - aTime;
+    });
+  };
 
   useEffect(() => {
     fetchTasks();
@@ -54,7 +99,9 @@ const TaskList = () => {
       return;
     }
 
-    setTasks(data || []);
+    // Apply sorting after fetching
+    const sortedTasks = sortTasks(data || []);
+    setTasks(sortedTasks);
   };
 
   const toggleTask = async (id: string, completed: boolean) => {
@@ -90,38 +137,77 @@ const TaskList = () => {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No tasks yet. Use the microphone to add one!</p>
+        <p className="text-muted-foreground mb-2">No tasks yet. Use the microphone to add one!</p>
+        <p className="text-xs text-muted-foreground">Try saying: "Add urgent task: Finish presentation"</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Advanced sort indicator */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">
+          Sorted by: Priority → Due Date → Creation Time
+        </p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <ArrowUpDown className="w-4 h-4" />
+          Smart Sort
+        </div>
+      </div>
+
       {tasks.map((task) => (
         <div
           key={task.id}
-          className="flex items-center gap-3 p-4 bg-card border border-border rounded-lg hover:shadow-md transition-shadow"
+          className={`group bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 ${
+            task.completed 
+              ? 'border-gray-200 dark:border-gray-700 opacity-75' 
+              : task.priority === 'high'
+                ? 'border-red-200 dark:border-red-800 shadow-red-100/50 dark:shadow-red-900/20'
+                : task.priority === 'medium'
+                  ? 'border-yellow-200 dark:border-yellow-800 shadow-yellow-100/50 dark:shadow-yellow-900/20'
+                  : 'border-gray-200 dark:border-gray-700'
+          }`}
         >
-          <Checkbox
-            checked={task.completed}
-            onCheckedChange={() => toggleTask(task.id, task.completed)}
-            className="flex-shrink-0"
-          />
-          <span
-            className={`flex-1 ${
-              task.completed ? "line-through text-muted-foreground" : "text-foreground"
-            }`}
-          >
-            {task.title}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => deleteTask(task.id)}
-            className="flex-shrink-0 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-start gap-3">
+            <Checkbox
+              checked={task.completed}
+              onCheckedChange={() => toggleTask(task.id, task.completed)}
+              className="flex-shrink-0 mt-1"
+            />
+            
+            <div className="flex-1 min-w-0">
+              {/* Task title */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <span
+                  className={`text-sm font-medium leading-relaxed ${
+                    task.completed 
+                      ? "line-through text-muted-foreground" 
+                      : "text-foreground"
+                  }`}
+                >
+                  {task.title}
+                </span>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteTask(task.id)}
+                  className="flex-shrink-0 w-8 h-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Task badges */}
+              <TaskBadges
+                priority={task.priority}
+                dueDate={task.due_date}
+                createdAt={task.created_at}
+                completed={task.completed}
+              />
+            </div>
+          </div>
         </div>
       ))}
     </div>

@@ -107,10 +107,10 @@ const VoiceInput = ({ onTranscript }: VoiceInputProps) => {
             Voice Commands
           </h4>
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>"Add task: Buy groceries"</p>
-            <p>"Remind me to call mom tomorrow"</p>
-            <p>"Create urgent task: Finish report"</p>
-            <p>"I need to exercise today"</p>
+            <p>"Add urgent task: Finish presentation"</p>
+            <p>"Remind me to call mom tomorrow at 2 PM"</p>
+            <p>"Create task: Buy groceries this afternoon"</p>
+            <p>"Schedule meeting next week at 10 AM"</p>
           </div>
         </div>
       )}

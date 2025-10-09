@@ -21,6 +21,12 @@ export type Database = {
           id: string
           title: string
           user_id: string
+          priority: 'low' | 'medium' | 'high' | null
+          due_date: string | null
+          due_time: string | null
+          category: string | null
+          description: string | null
+          updated_at: string | null
         }
         Insert: {
           completed?: boolean
@@ -28,6 +34,12 @@ export type Database = {
           id?: string
           title: string
           user_id: string
+          priority?: 'low' | 'medium' | 'high' | null
+          due_date?: string | null
+          due_time?: string | null
+          category?: string | null
+          description?: string | null
+          updated_at?: string | null
         }
         Update: {
           completed?: boolean
@@ -35,6 +47,12 @@ export type Database = {
           id?: string
           title?: string
           user_id?: string
+          priority?: 'low' | 'medium' | 'high' | null
+          due_date?: string | null
+          due_time?: string | null
+          category?: string | null
+          description?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
