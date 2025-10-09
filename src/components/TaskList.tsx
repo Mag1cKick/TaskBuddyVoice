@@ -48,6 +48,21 @@ const TaskList = () => {
         if (aDate !== bDate) {
           return aDate - bDate; // Sooner dates first
         }
+        
+        // If dates are the same, sort by time
+        if (a.due_time && b.due_time) {
+          const [aHour, aMin] = a.due_time.split(':').map(Number);
+          const [bHour, bMin] = b.due_time.split(':').map(Number);
+          const aMinutes = aHour * 60 + aMin;
+          const bMinutes = bHour * 60 + bMin;
+          if (aMinutes !== bMinutes) {
+            return aMinutes - bMinutes; // Earlier times first
+          }
+        } else if (a.due_time && !b.due_time) {
+          return -1; // Tasks with times come first
+        } else if (!a.due_time && b.due_time) {
+          return 1; // Tasks with times come first
+        }
       } else if (a.due_date && !b.due_date) {
         return -1; // Tasks with due dates come first
       } else if (!a.due_date && b.due_date) {
@@ -148,7 +163,7 @@ const TaskList = () => {
       {/* Advanced sort indicator */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          Sorted by: Priority → Due Date → Creation Time
+          Sorted by: Priority → Due Date → Due Time → Creation Time
         </p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ArrowUpDown className="w-4 h-4" />
@@ -203,6 +218,7 @@ const TaskList = () => {
               <TaskBadges
                 priority={task.priority}
                 dueDate={task.due_date}
+                dueTime={task.due_time}
                 createdAt={task.created_at}
                 completed={task.completed}
               />

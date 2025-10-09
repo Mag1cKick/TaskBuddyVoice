@@ -5,6 +5,7 @@ import { Clock, Calendar, AlertTriangle, CheckCircle2 } from "lucide-react";
 interface TaskBadgesProps {
   priority?: 'low' | 'medium' | 'high';
   dueDate?: string;
+  dueTime?: string;
   createdAt: string;
   completed?: boolean;
 }
@@ -12,6 +13,7 @@ interface TaskBadgesProps {
 const TaskBadges: React.FC<TaskBadgesProps> = ({ 
   priority, 
   dueDate, 
+  dueTime,
   createdAt, 
   completed = false 
 }) => {
@@ -39,6 +41,14 @@ const TaskBadges: React.FC<TaskBadgesProps> = ({
       default:
         return null;
     }
+  };
+
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':');
+    const hour24 = parseInt(hours);
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${minutes} ${ampm}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -119,6 +129,17 @@ const TaskBadges: React.FC<TaskBadgesProps> = ({
           <Calendar className="w-3 h-3" />
           {formatDate(dueDate)}
           {isOverdue(dueDate) && !completed && ' (Overdue)'}
+        </Badge>
+      )}
+
+      {/* Due Time Badge */}
+      {dueTime && (
+        <Badge 
+          variant="outline" 
+          className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1"
+        >
+          <Clock className="w-3 h-3" />
+          {formatTime(dueTime)}
         </Badge>
       )}
 
