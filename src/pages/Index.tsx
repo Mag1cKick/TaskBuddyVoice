@@ -43,30 +43,36 @@ const Index = () => {
     });
   };
 
-  const handleVoiceTranscript = async (text: string) => {
+  const handleVoiceTranscript = async (text: string, parsedTask?: any) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
+
+    // Use parsed task title if available, otherwise use raw text
+    const taskTitle = parsedTask?.title || text;
 
     const { error } = await supabase
       .from('tasks')
       .insert([
         {
           user_id: session.user.id,
-          title: text,
+          title: taskTitle,
+          // You can extend the database schema to store priority, category, etc.
+          // priority: parsedTask?.priority,
+          // category: parsedTask?.category,
+          // due_date: parsedTask?.dueDate,
         },
       ]);
 
     if (error) {
+      console.error('Error creating task:', error);
       toast({
         title: "Error",
         description: "Failed to create task",
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Task created!",
-        description: text,
-      });
+      // Success is already handled by the VoiceInput component
+      console.log('Task created successfully:', { taskTitle, parsedTask });
     }
   };
 
