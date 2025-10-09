@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { VoiceTaskParser } from "@/utils/voiceTaskParser";
+import { VoiceTaskParser, ParsedTask } from "@/utils/voiceTaskParser";
 
 interface VoiceInputProps {
   onTranscript: (text: string, parsedTask?: any) => void;
+  onTaskParsed?: (parsedTask: ParsedTask) => void;
 }
 
-const VoiceInput = ({ onTranscript }: VoiceInputProps) => {
+const VoiceInput = ({ onTranscript, onTaskParsed }: VoiceInputProps) => {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
@@ -40,13 +41,10 @@ const VoiceInput = ({ onTranscript }: VoiceInputProps) => {
       console.log('Parsed task:', parsedTask);
       
       if (parsedTask.isValid) {
-        onTranscript(parsedTask.title, parsedTask);
-        toast({
-          title: "Task parsed successfully!",
-          description: `Added: "${parsedTask.title}"${parsedTask.priority ? ` (${parsedTask.priority} priority)` : ''}`,
-          duration: 3000,
-        });
+        // Show review popup for parsed tasks
+        onTaskParsed?.(parsedTask);
       } else {
+        // For simple tasks, create directly
         onTranscript(transcript);
         toast({
           title: "Added as simple task",
