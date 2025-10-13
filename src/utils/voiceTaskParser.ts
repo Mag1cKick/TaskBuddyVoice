@@ -8,6 +8,8 @@ export interface ParsedTask {
   description?: string;
   isValid: boolean;
   originalText: string;
+  confidence: number; // 0-100
+  confidenceReasons: string[];
 }
 
 export class VoiceTaskParser {
@@ -120,6 +122,17 @@ export class VoiceTaskParser {
     // Clean up the task title
     taskTitle = this.cleanTaskTitle(taskTitle, priority, category, dueDate, dueTime);
 
+    // Calculate confidence and reasons
+    const { confidence, reasons } = this.calculateConfidence(cleanText, {
+      title: taskTitle,
+      priority,
+      category,
+      dueDate,
+      dueTime,
+      description,
+      isTaskCommand
+    });
+
     return {
       title: taskTitle,
       priority,
@@ -128,7 +141,9 @@ export class VoiceTaskParser {
       dueTime,
       description,
       isValid: taskTitle.length > 0,
-      originalText: transcript
+      originalText: transcript,
+      confidence,
+      confidenceReasons: reasons
     };
   }
 
@@ -572,5 +587,78 @@ export class VoiceTaskParser {
       "Add work task: Submit report by Christmas",
       "Create task: Halloween costume shopping in October"
     ];
+  }
+
+  private static calculateConfidence(text: string, parsed: {
+    title: string;
+    priority?: string;
+    category?: string;
+    dueDate?: string;
+    dueTime?: string;
+    description?: string;
+    isTaskCommand: boolean;
+  }): { confidence: number; reasons: string[] } {
+    let confidence = 0;
+    const reasons: string[] = [];
+
+    // Base confidence for having a title
+    if (parsed.title && parsed.title.length > 2) {
+      confidence += 30;
+      reasons.push('Clear task title identified');
+    } else {
+      reasons.push('Task title unclear');
+    }
+
+    // Confidence for task command recognition
+    if (parsed.isTaskCommand) {
+      confidence += 20;
+      reasons.push('Clear task command detected');
+    } else {
+      confidence += 10;
+      reasons.push('Implied task (no explicit command)');
+    }
+
+    // Confidence for extracted metadata
+    if (parsed.priority) {
+      confidence += 15;
+      reasons.push(`Priority detected: ${parsed.priority}`);
+    }
+
+    if (parsed.dueDate) {
+      confidence += 15;
+      reasons.push(`Due date detected: ${parsed.dueDate}`);
+    }
+
+    if (parsed.dueTime) {
+      confidence += 10;
+      reasons.push(`Due time detected: ${parsed.dueTime}`);
+    }
+
+    if (parsed.category) {
+      confidence += 5;
+      reasons.push(`Category detected: ${parsed.category}`);
+    }
+
+    if (parsed.description) {
+      confidence += 5;
+      reasons.push('Additional description found');
+    }
+
+    // Penalty for very short or unclear text
+    if (text.length < 10) {
+      confidence -= 10;
+      reasons.push('Very short input');
+    }
+
+    // Bonus for clear, well-structured commands
+    if (text.includes(':') && parsed.isTaskCommand) {
+      confidence += 5;
+      reasons.push('Well-structured command');
+    }
+
+    // Ensure confidence is within bounds
+    confidence = Math.max(0, Math.min(100, confidence));
+
+    return { confidence, reasons };
   }
 }
