@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import VoiceInput from "@/components/VoiceInput";
 import TaskList from "@/components/TaskList";
+import WeeklyDigest from "@/components/WeeklyDigest";
 import Logo from "@/components/Logo";
 import { LogOut, Check, X, AlertCircle, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -422,6 +423,8 @@ const Index = () => {
                 Enhanced Mode
               </span>
             </div>
+            
+            <WeeklyDigest userId={user?.id} />
             <TaskList />
           </div>
         </main>

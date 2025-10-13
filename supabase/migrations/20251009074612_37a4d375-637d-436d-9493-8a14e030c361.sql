@@ -39,3 +39,57 @@ SELECT column_name, data_type, is_nullable
 FROM information_schema.columns 
 WHERE table_name = 'tasks' AND table_schema = 'public'
 ORDER BY ordinal_position;
+
+-- Function to get weekly task statistics
+CREATE OR REPLACE FUNCTION get_weekly_task_stats(
+    user_id_param UUID,
+    start_date TIMESTAMP DEFAULT NOW() - INTERVAL '7 days',
+    end_date TIMESTAMP DEFAULT NOW()
+)
+RETURNS JSON AS $$
+DECLARE
+    stats JSON;
+BEGIN
+    SELECT json_build_object(
+        'total_tasks', COUNT(*),
+        'completed_tasks', COUNT(*) FILTER (WHERE completed = true),
+        'pending_tasks', COUNT(*) FILTER (WHERE completed = false),
+        'high_priority_tasks', COUNT(*) FILTER (WHERE priority = 'high'),
+        'medium_priority_tasks', COUNT(*) FILTER (WHERE priority = 'medium'),
+        'low_priority_tasks', COUNT(*) FILTER (WHERE priority = 'low'),
+        'categories_used', COALESCE(json_agg(DISTINCT category) FILTER (WHERE category IS NOT NULL), '[]'::json),
+        'completion_rate', CASE 
+            WHEN COUNT(*) > 0 THEN ROUND((COUNT(*) FILTER (WHERE completed = true)::numeric / COUNT(*)::numeric) * 100, 1)
+            ELSE 0 
+        END,
+        'daily_breakdown', (
+            SELECT json_agg(
+                json_build_object(
+                    'date', date_trunc('day', created_at)::date,
+                    'day_name', to_char(created_at, 'Day'),
+                    'task_count', day_count,
+                    'completed_count', completed_count
+                )
+            )
+            FROM (
+                SELECT 
+                    created_at,
+                    COUNT(*) as day_count,
+                    COUNT(*) FILTER (WHERE completed = true) as completed_count
+                FROM tasks 
+                WHERE user_id = user_id_param 
+                    AND created_at >= start_date 
+                    AND created_at <= end_date
+                GROUP BY date_trunc('day', created_at), created_at
+                ORDER BY date_trunc('day', created_at)
+            ) daily_stats
+        )
+    ) INTO stats
+    FROM tasks 
+    WHERE user_id = user_id_param 
+        AND created_at >= start_date 
+        AND created_at <= end_date;
+    
+    RETURN COALESCE(stats, '{}'::json);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
