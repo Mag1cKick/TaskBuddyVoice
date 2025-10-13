@@ -43,30 +43,62 @@ const Index = () => {
     });
   };
 
-  const handleVoiceTranscript = async (text: string) => {
+  const handleVoiceTranscript = async (text: string, parsedTask?: any) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
+
+    // Use parsed task title if available, otherwise use raw text
+    const taskTitle = parsedTask?.title || text;
+
+    // Convert parsed due date to proper format if available
+    let dueDate = null;
+    if (parsedTask?.dueDate) {
+      // Handle different date formats from the parser
+      if (parsedTask.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Already in YYYY-MM-DD format
+        dueDate = parsedTask.dueDate;
+      } else {
+        // Try to parse natural language dates
+        const today = new Date();
+        if (parsedTask.dueDate.toLowerCase().includes('today')) {
+          dueDate = today.toISOString().split('T')[0];
+        } else if (parsedTask.dueDate.toLowerCase().includes('tomorrow')) {
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dueDate = tomorrow.toISOString().split('T')[0];
+        }
+      }
+    }
+
+    // Convert due time to proper format
+    let dueTime = null;
+    if (parsedTask?.dueTime) {
+      dueTime = parsedTask.dueTime;
+    }
 
     const { error } = await supabase
       .from('tasks')
       .insert([
         {
           user_id: session.user.id,
-          title: text,
+          title: taskTitle,
+          priority: parsedTask?.priority || null,
+          category: parsedTask?.category || null,
+          due_date: dueDate,
+          due_time: dueTime,
+          description: parsedTask?.description || null,
         },
       ]);
 
     if (error) {
+      console.error('Error creating task:', error);
       toast({
         title: "Error",
-        description: "Failed to create task",
+        description: "Failed to create task. Make sure the database schema is up to date.",
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Task created!",
-        description: text,
-      });
+      console.log('Task created successfully:', { taskTitle, parsedTask, dueDate, dueTime });
     }
   };
 
@@ -103,6 +135,9 @@ const Index = () => {
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
               <h2 className="text-xl font-semibold text-foreground">Your Tasks</h2>
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></div>
+              <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+                Enhanced Mode
+              </span>
             </div>
             <TaskList />
           </div>
