@@ -133,7 +133,7 @@ export default function WeeklyDigest({ userId }: WeeklyDigestProps) {
   }
 
   const getMostActiveDay = () => {
-    if (!stats?.daily_breakdown) return 'No data'
+    if (!stats?.daily_breakdown || stats.daily_breakdown.length === 0) return 'No data'
     return stats.daily_breakdown.reduce((max, day) => 
       day.task_count > max.task_count ? day : max
     ).day_name.trim()
@@ -243,6 +243,11 @@ export default function WeeklyDigest({ userId }: WeeklyDigestProps) {
                         <span className="font-medium">{stats.low_priority_tasks}</span>
                       </div>
                     )}
+                    {stats.high_priority_tasks === 0 && stats.medium_priority_tasks === 0 && stats.low_priority_tasks === 0 && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                        No priority tasks this week
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -285,9 +290,13 @@ export default function WeeklyDigest({ userId }: WeeklyDigestProps) {
               {/* Motivational Message */}
               <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
                 <div className="text-center">
-                  <div className="text-2xl mb-2">{getCompletionRateEmoji(stats.completion_rate)}</div>
+                  <div className="text-2xl mb-2">
+                    {stats.total_tasks === 0 ? '🌱' : getCompletionRateEmoji(stats.completion_rate)}
+                  </div>
                   <div className="font-medium text-gray-800 dark:text-gray-200">
-                    {stats.completion_rate >= 80 
+                    {stats.total_tasks === 0 
+                      ? "Ready to start fresh? Add some tasks and let's get going!" 
+                      : stats.completion_rate >= 80 
                       ? "Outstanding work! You're crushing your goals!" 
                       : stats.completion_rate >= 60 
                       ? "Great progress! Keep up the momentum!" 
