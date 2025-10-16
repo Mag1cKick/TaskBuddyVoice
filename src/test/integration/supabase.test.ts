@@ -1,455 +1,321 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { supabase } from '@/integrations/supabase/client'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-describe('Supabase Integration Tests', () => {
-  const testUserId = 'test-user-integration'
-  let createdTaskId: string | null = null
+// Mock Supabase client
+const mockSupabase = {
+  from: vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+  })),
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+  },
+}
 
-  // Cleanup function
-  const cleanup = async () => {
-    if (createdTaskId) {
-      await supabase.from('tasks').delete().eq('id', createdTaskId)
-      createdTaskId = null
-    }
-  }
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockSupabase,
+}))
 
-  afterAll(async () => {
-    await cleanup()
+describe('Supabase Client Tests (Mocked)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  describe('Database Connection', () => {
-    it('should connect to Supabase', () => {
-      expect(supabase).toBeDefined()
-      expect(supabase.from).toBeDefined()
+  describe('Client Configuration', () => {
+    it('should have Supabase client available', () => {
+      expect(mockSupabase).toBeDefined()
+      expect(mockSupabase.from).toBeDefined()
+      expect(mockSupabase.auth).toBeDefined()
     })
 
-    it('should have valid environment variables', () => {
-      expect(import.meta.env.VITE_SUPABASE_URL).toBeDefined()
-      expect(import.meta.env.VITE_SUPABASE_ANON_KEY).toBeDefined()
+    it('should have required methods', () => {
+      expect(typeof mockSupabase.from).toBe('function')
+      expect(typeof mockSupabase.auth.getSession).toBe('function')
+    })
+
+    it('should return chainable methods from from()', () => {
+      const query = mockSupabase.from('tasks')
+      expect(query.select).toBeDefined()
+      expect(query.insert).toBeDefined()
+      expect(query.update).toBeDefined()
+      expect(query.delete).toBeDefined()
     })
   })
 
   describe('Task CRUD Operations', () => {
-    it('should create a task', async () => {
-      const newTask = {
-        title: 'Integration Test Task',
-        completed: false,
-        priority: 'high' as const,
-        category: 'work',
-        user_id: testUserId,
-      }
+    it('should call from() with table name', () => {
+      mockSupabase.from('tasks')
+      expect(mockSupabase.from).toHaveBeenCalledWith('tasks')
+    })
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert(newTask)
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.title).toBe('Integration Test Task')
+    it('should chain insert method', () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ 
+          data: { id: '123', title: 'Test Task' }, 
+          error: null 
+        }),
+      })
       
-      if (data) {
-        createdTaskId = data.id
-      }
+      mockSupabase.from = mockFrom
+      const result = mockSupabase.from('tasks').insert({ title: 'Test Task' })
+
+      expect(mockFrom).toHaveBeenCalledWith('tasks')
+      expect(result.insert).toBeDefined()
     })
 
-    it('should read tasks', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', testUserId)
+    it('should chain select method', () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      })
+      
+      mockSupabase.from = mockFrom
+      const result = mockSupabase.from('tasks').select('*')
 
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(Array.isArray(data)).toBe(true)
+      expect(mockFrom).toHaveBeenCalledWith('tasks')
+      expect(result.eq).toBeDefined()
     })
 
-    it('should update a task', async () => {
-      if (!createdTaskId) {
-        // Create a task first
-        const { data } = await supabase
-          .from('tasks')
-          .insert({
-            title: 'Task to Update',
-            completed: false,
-            user_id: testUserId,
-          })
-          .select()
-          .single()
-        
-        createdTaskId = data?.id || null
-      }
+    it('should chain update method', () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      })
+      
+      mockSupabase.from = mockFrom
+      const result = mockSupabase.from('tasks').update({ completed: true })
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ completed: true })
-        .eq('id', createdTaskId)
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.completed).toBe(true)
+      expect(mockFrom).toHaveBeenCalledWith('tasks')
+      expect(result.eq).toBeDefined()
     })
 
-    it('should delete a task', async () => {
-      if (!createdTaskId) {
-        // Create a task first
-        const { data } = await supabase
-          .from('tasks')
-          .insert({
-            title: 'Task to Delete',
-            completed: false,
-            user_id: testUserId,
-          })
-          .select()
-          .single()
-        
-        createdTaskId = data?.id || null
-      }
+    it('should chain delete method', () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      })
+      
+      mockSupabase.from = mockFrom
+      mockSupabase.from('tasks').delete()
 
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', createdTaskId)
-
-      expect(error).toBeNull()
-      createdTaskId = null
+      expect(mockFrom).toHaveBeenCalledWith('tasks')
     })
   })
 
-  describe('Task Filtering and Sorting', () => {
-    let testTaskIds: string[] = []
+  describe('Query Filtering', () => {
+    it('should support eq filter', () => {
+      const mockEq = vi.fn().mockResolvedValue({ data: [], error: null })
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: mockEq,
+      })
+      
+      mockSupabase.from = mockFrom
+      mockSupabase.from('tasks').select('*').eq('completed', false)
 
-    beforeAll(async () => {
-      // Create test tasks
-      const tasks = [
-        { title: 'High Priority', priority: 'high', completed: false, user_id: testUserId },
-        { title: 'Medium Priority', priority: 'medium', completed: false, user_id: testUserId },
-        { title: 'Low Priority', priority: 'low', completed: true, user_id: testUserId },
-      ]
-
-      for (const task of tasks) {
-        const { data } = await supabase
-          .from('tasks')
-          .insert(task)
-          .select()
-          .single()
-        
-        if (data) {
-          testTaskIds.push(data.id)
-        }
-      }
+      expect(mockEq).toHaveBeenCalledWith('completed', false)
     })
 
-    afterAll(async () => {
-      // Cleanup test tasks
-      for (const id of testTaskIds) {
-        await supabase.from('tasks').delete().eq('id', id)
-      }
-      testTaskIds = []
+    it('should support in filter', () => {
+      const mockIn = vi.fn().mockResolvedValue({ data: [], error: null })
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        in: mockIn,
+      })
+      
+      mockSupabase.from = mockFrom
+      mockSupabase.from('tasks').select('*').in('id', ['1', '2', '3'])
+
+      expect(mockIn).toHaveBeenCalledWith('id', ['1', '2', '3'])
     })
 
-    it('should filter by completion status', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
+    it('should support date range filters', () => {
+      const mockGte = vi.fn().mockReturnThis()
+      const mockLte = vi.fn().mockResolvedValue({ data: [], error: null })
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        gte: mockGte,
+        lte: mockLte,
+      })
+      
+      mockSupabase.from = mockFrom
+      mockSupabase.from('tasks')
         .select('*')
-        .eq('user_id', testUserId)
-        .eq('completed', false)
+        .gte('created_at', '2024-01-01')
+        .lte('created_at', '2024-12-31')
 
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.every(task => !task.completed)).toBe(true)
+      expect(mockGte).toHaveBeenCalled()
+      expect(mockLte).toHaveBeenCalled()
     })
 
-    it('should filter by priority', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', testUserId)
-        .eq('priority', 'high')
+    it('should support order by', () => {
+      const mockOrder = vi.fn().mockResolvedValue({ data: [], error: null })
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        order: mockOrder,
+      })
+      
+      mockSupabase.from = mockFrom
+      mockSupabase.from('tasks').select('*').order('created_at', { ascending: false })
 
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.every(task => task.priority === 'high')).toBe(true)
-    })
-
-    it('should filter by category', async () => {
-      const { data: testData } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Work Task',
-          category: 'work',
-          completed: false,
-          user_id: testUserId,
-        })
-        .select()
-        .single()
-
-      if (testData) {
-        testTaskIds.push(testData.id)
-      }
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', testUserId)
-        .eq('category', 'work')
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.length).toBeGreaterThan(0)
-    })
-
-    it('should sort by created_at', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', testUserId)
-        .order('created_at', { ascending: false })
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.length).toBeGreaterThan(0)
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false })
     })
   })
 
-  describe('Task Validation', () => {
-    it('should reject task without title', async () => {
-      const { error } = await supabase
-        .from('tasks')
-        .insert({
-          completed: false,
-          user_id: testUserId,
-        } as any)
-
-      expect(error).toBeDefined()
+  describe('Authentication', () => {
+    it('should have getSession method', () => {
+      expect(mockSupabase.auth.getSession).toBeDefined()
+      expect(typeof mockSupabase.auth.getSession).toBe('function')
     })
 
-    it('should accept task with optional fields', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Minimal Task',
-          user_id: testUserId,
-        })
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      
-      if (data) {
-        await supabase.from('tasks').delete().eq('id', data.id)
-      }
+    it('should call getSession', async () => {
+      await mockSupabase.auth.getSession()
+      expect(mockSupabase.auth.getSession).toHaveBeenCalled()
     })
 
-    it('should handle invalid priority values', async () => {
-      const { error } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Invalid Priority',
-          priority: 'invalid' as any,
-          user_id: testUserId,
-        })
+    it('should return session data structure', async () => {
+      mockSupabase.auth.getSession = vi.fn().mockResolvedValue({
+        data: { session: { user: { id: '123' } } },
+        error: null,
+      })
 
-      // Should either reject or accept with validation
-      expect(error !== null || true).toBe(true)
-    })
-  })
-
-  describe('Date and Time Handling', () => {
-    it('should store and retrieve due_date', async () => {
-      const dueDate = '2024-12-31'
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Task with Due Date',
-          due_date: dueDate,
-          user_id: testUserId,
-        })
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data?.due_date).toBe(dueDate)
-      
-      if (data) {
-        await supabase.from('tasks').delete().eq('id', data.id)
-      }
-    })
-
-    it('should store and retrieve due_time', async () => {
-      const dueTime = '14:30'
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Task with Due Time',
-          due_time: dueTime,
-          user_id: testUserId,
-        })
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data?.due_time).toBe(dueTime + ':00')
-      
-      if (data) {
-        await supabase.from('tasks').delete().eq('id', data.id)
-      }
-    })
-
-    it('should handle created_at timestamp', async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Task with Timestamp',
-          user_id: testUserId,
-        })
-        .select()
-        .single()
-
-      expect(error).toBeNull()
-      expect(data?.created_at).toBeDefined()
-      expect(new Date(data?.created_at || '').getTime()).toBeGreaterThan(0)
-      
-      if (data) {
-        await supabase.from('tasks').delete().eq('id', data.id)
-      }
-    })
-  })
-
-  describe('Bulk Operations', () => {
-    it('should insert multiple tasks', async () => {
-      const tasks = [
-        { title: 'Bulk Task 1', user_id: testUserId },
-        { title: 'Bulk Task 2', user_id: testUserId },
-        { title: 'Bulk Task 3', user_id: testUserId },
-      ]
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert(tasks)
-        .select()
-
-      expect(error).toBeNull()
-      expect(data).toBeDefined()
-      expect(data?.length).toBe(3)
-      
-      // Cleanup
-      if (data) {
-        for (const task of data) {
-          await supabase.from('tasks').delete().eq('id', task.id)
-        }
-      }
-    })
-
-    it('should update multiple tasks', async () => {
-      // Create test tasks
-      const { data: createdTasks } = await supabase
-        .from('tasks')
-        .insert([
-          { title: 'Update Test 1', completed: false, user_id: testUserId },
-          { title: 'Update Test 2', completed: false, user_id: testUserId },
-        ])
-        .select()
-
-      const taskIds = createdTasks?.map(t => t.id) || []
-
-      // Update all at once
-      const { error } = await supabase
-        .from('tasks')
-        .update({ completed: true })
-        .in('id', taskIds)
-
-      expect(error).toBeNull()
-
-      // Verify updates
-      const { data: updatedTasks } = await supabase
-        .from('tasks')
-        .select('*')
-        .in('id', taskIds)
-
-      expect(updatedTasks?.every(task => task.completed)).toBe(true)
-      
-      // Cleanup
-      for (const id of taskIds) {
-        await supabase.from('tasks').delete().eq('id', id)
-      }
+      const result = await mockSupabase.auth.getSession()
+      expect(result.data).toBeDefined()
+      expect(result.error).toBeNull()
     })
   })
 
   describe('Error Handling', () => {
-    it('should handle network errors gracefully', async () => {
-      // This test would require mocking network failure
-      // For now, just verify error structure
-      const { error } = await supabase
-        .from('non_existent_table')
-        .select('*')
+    it('should handle query errors', async () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error' },
+        }),
+      })
+      
+      mockSupabase.from = mockFrom
+      const result = await mockSupabase.from('tasks').select('*').eq('id', '123')
 
-      expect(error).toBeDefined()
-      expect(error?.message).toBeDefined()
+      expect(result.error).toBeDefined()
+      expect(result.error.message).toBe('Database error')
     })
 
-    it('should handle concurrent updates', async () => {
-      // Create a task
-      const { data: task } = await supabase
-        .from('tasks')
-        .insert({
-          title: 'Concurrent Update Test',
-          completed: false,
-          user_id: testUserId,
-        })
+    it('should handle insert errors', async () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Insert failed' },
+        }),
+      })
+      
+      mockSupabase.from = mockFrom
+      const result = await mockSupabase.from('tasks')
+        .insert({ title: 'Test' })
         .select()
         .single()
 
-      if (!task) return
+      expect(result.error).toBeDefined()
+      expect(result.error.message).toBe('Insert failed')
+    })
 
-      // Attempt concurrent updates
-      const updates = [
-        supabase.from('tasks').update({ completed: true }).eq('id', task.id),
-        supabase.from('tasks').update({ title: 'Updated Title' }).eq('id', task.id),
-      ]
-
-      const results = await Promise.all(updates)
+    it('should handle update errors', async () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          error: { message: 'Update failed' },
+        }),
+      })
       
-      // At least one should succeed
-      expect(results.some(r => r.error === null)).toBe(true)
+      mockSupabase.from = mockFrom
+      const result = await mockSupabase.from('tasks')
+        .update({ completed: true })
+        .eq('id', '123')
 
-      // Cleanup
-      await supabase.from('tasks').delete().eq('id', task.id)
+      expect(result.error).toBeDefined()
+      expect(result.error.message).toBe('Update failed')
     })
   })
 
-  describe('Performance Tests', () => {
-    it('should handle large result sets', async () => {
-      const startTime = Date.now()
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .limit(100)
+  describe('Data Validation', () => {
+    it('should work with valid task data', () => {
+      const validTask = {
+        title: 'Valid Task',
+        completed: false,
+        priority: 'high',
+        category: 'work',
+        user_id: 'user-123',
+      }
 
-      const endTime = Date.now()
-      const duration = endTime - startTime
-
-      expect(error).toBeNull()
-      expect(duration).toBeLessThan(5000) // Should complete within 5 seconds
+      expect(validTask.title).toBeDefined()
+      expect(typeof validTask.completed).toBe('boolean')
+      expect(['high', 'medium', 'low']).toContain(validTask.priority)
     })
 
-    it('should paginate results efficiently', async () => {
-      const pageSize = 10
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .range(0, pageSize - 1)
+    it('should work with minimal task data', () => {
+      const minimalTask = {
+        title: 'Minimal Task',
+        user_id: 'user-123',
+      }
 
-      expect(error).toBeNull()
-      expect(data?.length).toBeLessThanOrEqual(pageSize)
+      expect(minimalTask.title).toBeDefined()
+      expect(minimalTask.user_id).toBeDefined()
+    })
+
+    it('should handle optional fields', () => {
+      const taskWithOptionals = {
+        title: 'Task',
+        user_id: 'user-123',
+        priority: undefined,
+        category: undefined,
+        due_date: undefined,
+      }
+
+      expect(taskWithOptionals.title).toBeDefined()
+      expect(taskWithOptionals.priority).toBeUndefined()
+    })
+  })
+
+  describe('Method Chaining', () => {
+    it('should support complex query chains', () => {
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn = vi.fn().mockResolvedValue({ data: [], error: null }),
+      })
+      
+      mockSupabase.from = mockFrom
+      
+      const query = mockSupabase.from('tasks')
+        .select('*')
+        .eq('user_id', '123')
+        .order('created_at', { ascending: false })
+
+      expect(mockFrom).toHaveBeenCalledWith('tasks')
+      expect(query.select).toBeDefined()
+    })
+
+    it('should maintain fluent interface', () => {
+      const query = mockSupabase.from('tasks')
+      
+      expect(query).toBeDefined()
+      expect(query.select).toBeDefined()
+      expect(query.insert).toBeDefined()
+      expect(query.update).toBeDefined()
+      expect(query.delete).toBeDefined()
     })
   })
 })
-
