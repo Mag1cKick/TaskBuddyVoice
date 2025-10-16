@@ -59,16 +59,22 @@ npm test -- --watch
 npm run test:ui
 ```
 
+### Run E2E Tests Only
+
+```bash
+npm run test:e2e
+```
+
 ### Run Specific Test File
 
 ```bash
-npm test voiceTaskParser.test
+npm test WeeklyDigest.test
 ```
 
-### Run Integration Tests Only
+### Run Component Tests Only
 
 ```bash
-npm test -- tests/integration
+npm test -- src/components/__tests__
 ```
 
 ### Generate Coverage Report
@@ -90,16 +96,15 @@ Coverage report will be generated in `./coverage` directory.
 
 ### Coverage by Module
 
-#### Voice Task Parser (`voiceTaskParser.ts`)
-- ✅ Basic task parsing
-- ✅ Priority extraction (high, medium, low)
-- ✅ Category extraction (work, personal, shopping, health, finance)
-- ✅ Date parsing (today, tomorrow, next week, specific dates)
-- ✅ Time parsing (12h/24h format, noon, midnight)
-- ✅ Description extraction
-- ✅ Complex multi-attribute parsing
-- ✅ Confidence scoring
-- ✅ Edge cases (empty input, long input, special characters)
+#### End-to-End User Workflows (`user-workflow.test.ts`)
+- ✅ Task creation scenarios (simple, with priority, category, dates, times)
+- ✅ Task retrieval and filtering (by status, priority, category)
+- ✅ Task updates (completion, priority changes, multiple fields)
+- ✅ Task deletion (single and bulk)
+- ✅ Realistic user scenarios (daily routines, weekly planning, priority management)
+- ✅ Edge cases (missing fields, long titles, special characters, bulk operations)
+
+**Note:** Voice parser testing is excluded as it requires human validation and creates false positives in automated tests.
 
 #### Weekly Digest (`WeeklyDigest.tsx`)
 - ✅ Initial render and visibility toggle

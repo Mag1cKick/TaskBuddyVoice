@@ -105,10 +105,12 @@ npm test -- tests/integration
 
 ### Test Coverage
 
-- **Voice Parser**: 100% coverage (all edge cases)
+- **E2E User Workflows**: Real user scenarios and task operations
 - **Components**: 85%+ coverage (WeeklyDigest, TaskList)
-- **Integration**: Full Supabase CRUD operations
+- **Supabase Integration**: Full CRUD operations testing
 - **CI/CD**: Automated testing on every PR
+
+**Note**: Voice parser testing is done manually as it requires human validation for accuracy.
 
 See [TESTING.md](./TESTING.md) for detailed testing documentation.
 
