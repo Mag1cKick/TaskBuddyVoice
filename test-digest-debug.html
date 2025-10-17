@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekly Digest Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; cursor: pointer; }
+        pre { background: #000; padding: 15px; border-radius: 8px; overflow-x: auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        h2 { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>📧 Weekly Digest Debugger</h1>
+    
+    <div class="section">
+        <h2>Step 1: Check Your Tasks</h2>
+        <button onclick="checkTasks()">Check My Tasks</button>
+        <pre id="tasks-result">Click the button to check your tasks...</pre>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: Check Your User Info</h2>
+        <button onclick="checkUser()">Check User Info</button>
+        <pre id="user-result">Click the button to check your user info...</pre>
+    </div>
+
+    <div class="section">
+        <h2>Step 3: Test Weekly Digest Function</h2>
+        <button onclick="testDigest()">Test Digest Function</button>
+        <pre id="digest-result">Click the button to test the digest function...</pre>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://bdwttimhtpnxhhwnnjji.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd3R0aW1odHBueGhod25uamppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MzUzMDgsImV4cCI6MjA3NTUxMTMwOH0.UmOu8PWCiqnLrwY8Aiqg_TbcZMex50Cra1LM-Tqq-RQ';
+
+        window.checkTasks = async function() {
+            const result = document.getElementById('tasks-result');
+            result.textContent = 'Loading...';
+            
+            try {
+                // Get session first
+                const sessionResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${localStorage.getItem('sb-bdwttimhtpnxhhwnnjji-auth-token') || SUPABASE_KEY}`
+                    }
+                });
+                
+                const session = await sessionResponse.json();
+                const userId = session.id;
+
+                // Get tasks
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+                const tasksResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/tasks?user_id=eq.${userId}&created_at=gte.${sevenDaysAgo.toISOString()}&order=created_at.desc`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    }
+                );
+
+                const tasks = await tasksResponse.json();
+                
+                result.textContent = JSON.stringify({
+                    userId: userId,
+                    tasksFound: tasks.length,
+                    dateRange: {
+                        from: sevenDaysAgo.toISOString(),
+                        to: new Date().toISOString()
+                    },
+                    tasks: tasks.map(t => ({
+                        id: t.id,
+                        title: t.title,
+                        created_at: t.created_at,
+                        completed: t.completed
+                    }))
+                }, null, 2);
+            } catch (error) {
+                result.textContent = `Error: ${error.message}\n\n${error.stack}`;
+            }
+        };
+
+        window.checkUser = async function() {
+            const result = document.getElementById('user-result');
+            result.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${localStorage.getItem('sb-bdwttimhtpnxhhwnnjji-auth-token') || SUPABASE_KEY}`
+                    }
+                });
+                
+                const user = await response.json();
+                result.textContent = JSON.stringify({
+                    id: user.id,
+                    email: user.email,
+                    created_at: user.created_at
+                }, null, 2);
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+            }
+        };
+
+        window.testDigest = async function() {
+            const result = document.getElementById('digest-result');
+            result.textContent = 'Sending request...';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/weekly-digest`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+            }
+        };
+    </script>
+</body>
+</html>
+

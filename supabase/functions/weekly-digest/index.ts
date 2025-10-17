@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
 interface WeeklyStats {
@@ -27,15 +28,22 @@ interface User {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    })
   }
 
   try {
     // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase environment variables not configured')
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseKey)
 
     // Get date range for last 7 days
     const endDate = new Date()
@@ -49,13 +57,20 @@ serve(async (req) => {
       throw usersError
     }
 
+    console.log(`Found ${users.users.length} total users`)
+
     const emailResults = []
 
     // Process each user
     for (const user of users.users) {
-      if (!user.email) continue
+      if (!user.email) {
+        console.log(`Skipping user ${user.id} - no email`)
+        continue
+      }
 
       try {
+        console.log(`Processing user ${user.id} (${user.email})`)
+        
         // Fetch user's tasks from last 7 days
         const { data: tasks, error: tasksError } = await supabaseClient
           .from('tasks')
@@ -66,11 +81,28 @@ serve(async (req) => {
 
         if (tasksError) {
           console.error(`Error fetching tasks for user ${user.id}:`, tasksError)
+          emailResults.push({
+            userId: user.id,
+            email: user.email,
+            success: false,
+            error: `Failed to fetch tasks: ${tasksError.message}`,
+            tasksFound: 0
+          })
           continue
         }
 
-        // Skip users with no tasks this week
+        console.log(`User ${user.id} has ${tasks?.length || 0} tasks in the last 7 days`)
+
+        // Send email even if no tasks (with motivational message)
         if (!tasks || tasks.length === 0) {
+          // For now, skip users with no tasks but log it
+          emailResults.push({
+            userId: user.id,
+            email: user.email,
+            success: false,
+            error: 'No tasks in the last 7 days',
+            tasksFound: 0
+          })
           continue
         }
 
@@ -87,7 +119,8 @@ serve(async (req) => {
           userId: user.id,
           email: user.email,
           success: emailResult.success,
-          error: emailResult.error || null
+          error: emailResult.error || null,
+          tasksFound: tasks.length
         })
 
       } catch (userError) {
@@ -96,7 +129,8 @@ serve(async (req) => {
           userId: user.id,
           email: user.email,
           success: false,
-          error: userError.message
+          error: userError.message,
+          tasksFound: 0
         })
       }
     }

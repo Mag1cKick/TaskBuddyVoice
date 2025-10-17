@@ -1,12 +1,10 @@
 # Task Buddy Voice 🎤✨
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/TaskBuddyVoice/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/TaskBuddyVoice/actions/workflows/ci.yml)
-[![Test Coverage](https://img.shields.io/badge/coverage-80%25-green)](./coverage)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-blue)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A powerful voice-powered task management application with intelligent parsing, weekly insights, and comprehensive testing.
+A powerful voice-powered task management application with intelligent parsing and weekly insights.
 
 ## Project info
 
@@ -78,53 +76,8 @@ npm run dev
 - 💪 **Motivational Messages**: Encouraging feedback based on performance
 
 ### Developer Experience
-- ✅ **Comprehensive Testing**: 80%+ code coverage
-- 🔄 **CI/CD Pipeline**: Automated testing and deployment
 - 🛡️ **Type Safety**: Full TypeScript implementation
 - 📖 **Documentation**: Extensive docs for contributors
-
-## 🧪 Testing
-
-This project has **comprehensive test coverage** with unit tests, integration tests, and automated CI/CD.
-
-### Run Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run with UI
-npm run test:ui
-
-# Run integration tests
-npm test -- tests/integration
-```
-
-### Test Coverage
-
-- **E2E User Workflows**: Real user scenarios and task operations
-- **Components**: 85%+ coverage (WeeklyDigest, TaskList)
-- **Supabase Integration**: Full CRUD operations testing
-- **CI/CD**: Automated testing on every PR
-
-**Note**: Voice parser testing is done manually as it requires human validation for accuracy.
-
-See [TESTING.md](./TESTING.md) for detailed testing documentation.
-
-## 🚀 CI/CD Pipeline
-
-Automated GitHub Actions workflow runs on every push and PR:
-
-- ✅ Linting & Type Checking
-- ✅ Unit & Integration Tests
-- ✅ Code Coverage Reports
-- ✅ Build Verification
-- ✅ Security Audits
-- ✅ Bundle Size Analysis
-- ✅ Performance Checks
 
 ## What technologies are used for this project?
 
@@ -141,12 +94,6 @@ This project is built with:
 - **Supabase** - PostgreSQL database and authentication
 - **Supabase Edge Functions** - Serverless functions for weekly digest
 
-### Testing
-- **Vitest** - Fast unit test framework
-- **Testing Library** - React component testing
-- **jsdom** - DOM implementation for tests
-- **GitHub Actions** - CI/CD automation
-
 ### Additional Tools
 - **Web Speech API** - Voice recognition
 - **Resend** - Email delivery service
@@ -159,7 +106,7 @@ Simply open [Lovable](https://lovable.dev/projects/65911553-39df-45a8-960f-bc6a9
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for guidelines.
+We welcome contributions!
 
 ### Quick Start for Contributors
 
@@ -171,24 +118,18 @@ cd TaskBuddyVoice
 # Install dependencies
 npm install
 
-# Run tests
-npm test
-
 # Start development
 npm run dev
 ```
 
 ### Before Submitting a PR
 
-- ✅ All tests pass (`npm test`)
-- ✅ Code coverage maintained (`npm run test:coverage`)
 - ✅ Linting passes (`npm run lint`)
 - ✅ TypeScript compiles (`npx tsc --noEmit`)
+- ✅ App builds successfully (`npm run build`)
 
 ## 📚 Documentation
 
-- [TESTING.md](./TESTING.md) - Comprehensive testing guide
-- [CONTRIBUTING.md](./.github/CONTRIBUTING.md) - Contribution guidelines
 - [WEEKLY_DIGEST_SETUP.md](./WEEKLY_DIGEST_SETUP.md) - Email digest configuration
 
 ## 🔧 Environment Variables
