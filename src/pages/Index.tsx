@@ -53,38 +53,6 @@ const Index = () => {
     });
   };
 
-  // Test weekly digest email function
-  const handleTestWeeklyDigest = async () => {
-    toast({
-      title: "Sending test email...",
-      description: "Invoking weekly digest function",
-    });
-
-    try {
-      const { data, error } = await supabase.functions.invoke('weekly-digest');
-      
-      if (error) {
-        toast({
-          title: "Error sending digest",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Test email sent!",
-          description: "Check your email inbox (the one used for your Supabase account)",
-          duration: 5000,
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to invoke function",
-        variant: "destructive",
-      });
-    }
-  };
-
   // Function to show review popup when task is parsed
   const handleTaskParsed = (parsedTask: ParsedTask) => {
     setCurrentParsedTask(parsedTask);
@@ -435,24 +403,14 @@ const Index = () => {
               <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTestWeeklyDigest}
-              className="text-xs hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-xl transition-all"
-            >
-              📧 Test Email
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSignOut}
-              className="text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-xl transition-all"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-xl transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
         </header>
 
         <main className="space-y-8">
