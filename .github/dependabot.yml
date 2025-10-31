@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-github-username"
+    assignees:
+      - "your-github-username"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    # Group updates by type
+    groups:
+      production-dependencies:
+        patterns:
+          - "@radix-ui/*"
+          - "@supabase/*"
+          - "react*"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        patterns:
+          - "@types/*"
+          - "@vitejs/*"
+          - "eslint*"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore specific updates
+    ignore:
+      # Ignore major version updates for stable packages
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "github-actions"
+      - "automated"

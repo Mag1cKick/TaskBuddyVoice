@@ -14,11 +14,13 @@ import Logo from "@/components/Logo";
 import { LogOut, Check, X, AlertCircle, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ParsedTask } from "@/utils/voiceTaskParser";
+import type { User } from "@supabase/supabase-js";
+import { setUser as setSentryUser } from "@/config/sentry";
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showReviewPopup, setShowReviewPopup] = useState(false);
   const [currentParsedTask, setCurrentParsedTask] = useState<ParsedTask | null>(null);
   const [editedTask, setEditedTask] = useState<ParsedTask | null>(null);
@@ -28,8 +30,14 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+        setSentryUser(null);
       } else {
         setUser(session.user);
+        // Set user context for error tracking
+        setSentryUser({
+          id: session.user.id,
+          email: session.user.email,
+        });
       }
     };
     checkSession();
@@ -37,8 +45,14 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate("/auth");
+        setSentryUser(null);
       } else {
         setUser(session.user);
+        // Set user context for error tracking
+        setSentryUser({
+          id: session.user.id,
+          email: session.user.email,
+        });
       }
     });
 
@@ -135,7 +149,7 @@ const Index = () => {
     }
   };
 
-  const handleVoiceTranscript = async (text: string, parsedTask?: any) => {
+  const handleVoiceTranscript = async (text: string, parsedTask?: ParsedTask) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 

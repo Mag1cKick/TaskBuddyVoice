@@ -4,14 +4,39 @@ import { Mic, MicOff, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { VoiceTaskParser, ParsedTask } from "@/utils/voiceTaskParser";
 
+interface SpeechRecognitionEvent {
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
 interface VoiceInputProps {
-  onTranscript: (text: string, parsedTask?: any) => void;
+  onTranscript: (text: string, parsedTask?: ParsedTask) => void;
   onTaskParsed?: (parsedTask: ParsedTask) => void;
 }
 
 const VoiceInput = ({ onTranscript, onTaskParsed }: VoiceInputProps) => {
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognitionInstance | null>(null);
   const [showHints, setShowHints] = useState(false);
   const { toast } = useToast();
 
@@ -25,14 +50,14 @@ const VoiceInput = ({ onTranscript, onTaskParsed }: VoiceInputProps) => {
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as typeof window & { SpeechRecognition: new () => SpeechRecognitionInstance; webkitSpeechRecognition: new () => SpeechRecognitionInstance }).SpeechRecognition || (window as typeof window & { webkitSpeechRecognition: new () => SpeechRecognitionInstance }).webkitSpeechRecognition;
     const recognitionInstance = new SpeechRecognition();
     
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = false;
     recognitionInstance.lang = 'en-US';
 
-    recognitionInstance.onresult = (event: any) => {
+    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       console.log('Raw transcript:', transcript);
       
@@ -56,7 +81,7 @@ const VoiceInput = ({ onTranscript, onTaskParsed }: VoiceInputProps) => {
       setIsListening(false);
     };
 
-    recognitionInstance.onerror = (event: any) => {
+    recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
       toast({

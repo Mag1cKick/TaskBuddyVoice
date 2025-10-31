@@ -238,10 +238,11 @@ export class VoiceTaskParser {
       case 'today':
         return now.toISOString().split('T')[0];
       
-      case 'tomorrow':
+      case 'tomorrow': {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         return tomorrow.toISOString().split('T')[0];
+      }
       
       case 'weekday': {
         const dayName = match.toLowerCase();
@@ -486,7 +487,7 @@ export class VoiceTaskParser {
 
   private static convertToTimeString(match: string, type: string, groups: RegExpMatchArray): string | undefined {
     switch (type) {
-      case 'specific_time':
+      case 'specific_time': {
         // Handle formats like "2:30 PM" or "14:30"
         const hour = parseInt(groups[1]);
         const minute = groups[2] ? parseInt(groups[2]) : 0;
@@ -497,8 +498,9 @@ export class VoiceTaskParser {
         if (ampm === 'am' && hour === 12) hour24 = 0;
         
         return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      }
       
-      case 'hour_time':
+      case 'hour_time': {
         // Handle formats like "2 PM" or "2AM"
         const hourOnly = parseInt(groups[1]);
         const ampmOnly = groups[2]?.toLowerCase();
@@ -508,8 +510,9 @@ export class VoiceTaskParser {
         if (ampmOnly === 'am' && hourOnly === 12) hour24Only = 0;
         
         return `${hour24Only.toString().padStart(2, '0')}:00`;
+      }
       
-      case 'time_24h':
+      case 'time_24h': {
         // Handle 24-hour format like "14:30"
         const hour24h = parseInt(groups[1]);
         const minute24h = groups[2] ? parseInt(groups[2]) : 0;
@@ -519,9 +522,10 @@ export class VoiceTaskParser {
           return `${hour24h.toString().padStart(2, '0')}:${minute24h.toString().padStart(2, '0')}`;
         }
         return undefined;
+      }
       
       case 'period':
-      case 'period_simple':
+      case 'period_simple': {
         // Convert general periods to approximate times
         const period = groups[1]?.toLowerCase() || match.toLowerCase();
         switch (period) {
@@ -532,8 +536,9 @@ export class VoiceTaskParser {
           case 'tonight': return '20:00';
           default: return undefined;
         }
+      }
       
-      case 'relative_time':
+      case 'relative_time': {
         // Handle "in 2 hours" etc.
         const amount = parseInt(groups[1]);
         const unit = groups[2].toLowerCase();
@@ -546,6 +551,7 @@ export class VoiceTaskParser {
         }
         
         return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      }
       
       default:
         return undefined;

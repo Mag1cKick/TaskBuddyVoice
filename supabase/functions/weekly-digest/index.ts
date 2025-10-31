@@ -7,6 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
+interface Task {
+  id: string
+  title: string
+  completed: boolean
+  priority?: string
+  category?: string
+  created_at: string
+  user_id: string
+}
+
 interface WeeklyStats {
   totalTasks: number
   completedTasks: number
@@ -202,7 +212,7 @@ async function sendWeeklyDigestEmail(email: string, htmlContent: string, stats: 
   }
 }
 
-function calculateWeeklyStats(tasks: any[]): WeeklyStats {
+function calculateWeeklyStats(tasks: Task[]): WeeklyStats {
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(task => task.completed).length
   const pendingTasks = totalTasks - completedTasks

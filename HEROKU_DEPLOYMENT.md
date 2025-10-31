@@ -17,9 +17,14 @@ Before deploying, you MUST set these environment variables:
 3. Add these variables:
 
 ```
-VITE_SUPABASE_URL = https://bdwttimhtpnxhhwnnjji.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd3R0aW1odHBueGhod25uamppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MzUzMDgsImV4cCI6MjA3NTUxMTMwOH0.UmOu8PWCiqnLrwY8Aiqg_TbcZMex50Cra1LM-Tqq-RQ
+VITE_SUPABASE_URL = your-supabase-url-here
+VITE_SUPABASE_ANON_KEY = your-supabase-anon-key-here
+VITE_SENTRY_DSN = your-sentry-dsn-here (optional)
 ```
+
+**⚠️ IMPORTANT:** Get these values from:
+- Supabase URL & Key: Supabase Dashboard → Settings → API
+- Sentry DSN: Sentry Dashboard → Settings → Projects → [Your Project] → Client Keys
 
 ### Step 2: Commit and Push Changes
 
