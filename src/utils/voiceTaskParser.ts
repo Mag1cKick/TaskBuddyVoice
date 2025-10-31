@@ -161,12 +161,23 @@ export class VoiceTaskParser {
       originalTitle = originalTitle.replace(regex, '').trim();
     }
     
-    // Also remove category + "task" combinations (e.g., "work task")
+    // Also remove standalone "add", "create", "new" when followed by category + task
+    const actionWords = ['add', 'create', 'new'];
     const categoryNames = Object.keys(this.CATEGORY_KEYWORDS);
-    categoryNames.forEach(category => {
-      const regex = new RegExp(`\\b${category}\\s+task\\s*:?\\s*`, 'gi');
-      title = title.replace(regex, '').trim();
-      originalTitle = originalTitle.replace(regex, '').trim();
+    
+    actionWords.forEach(action => {
+      categoryNames.forEach(category => {
+        const regex = new RegExp(`\\b${action}\\s+\\w*\\s*${category}\\s+task\\s*:?\\s*`, 'gi');
+        title = title.replace(regex, '').trim();
+        originalTitle = originalTitle.replace(regex, '').trim();
+      });
+      
+      // Also remove just "category task" combinations
+      categoryNames.forEach(category => {
+        const regex = new RegExp(`\\b${category}\\s+task\\s*:?\\s*`, 'gi');
+        title = title.replace(regex, '').trim();
+        originalTitle = originalTitle.replace(regex, '').trim();
+      });
     });
 
     // Remove colons that might be left after trigger removal

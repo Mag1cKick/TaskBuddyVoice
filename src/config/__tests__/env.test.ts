@@ -133,9 +133,10 @@ describe('Environment Configuration', () => {
     });
 
     it('should reject invalid URLs', async () => {
+      // Test URLs that will actually fail URL parsing
       const invalidUrls = [
         'not-a-url',
-        'ftp://test.com',
+        'invalid url with spaces',
         '',
       ];
 

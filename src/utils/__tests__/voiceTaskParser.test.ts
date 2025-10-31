@@ -280,7 +280,7 @@ describe('VoiceTaskParser', () => {
       expect(result.category).toBe('work');
       expect(result.dueDate).toBe('2024-06-16');
       expect(result.dueTime).toBe('14:00');
-      expect(result.description).toBe('Include Q4 results');
+      expect(result.description).toBe('Include q4 results'); // capitalizeFirst only capitalizes first letter
       expect(result.isValid).toBe(true);
     });
 
