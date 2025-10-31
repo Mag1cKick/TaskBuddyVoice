@@ -98,6 +98,7 @@ export class VoiceTaskParser {
   };
 
   public static parseVoiceInput(transcript: string): ParsedTask {
+    const originalText = transcript.trim();
     const cleanText = transcript.toLowerCase().trim();
     
     // Check if this looks like a task command
@@ -105,12 +106,12 @@ export class VoiceTaskParser {
       cleanText.includes(trigger.toLowerCase())
     );
 
-    // Extract the main task content
-    let taskTitle = this.extractTaskTitle(cleanText);
+    // Extract the main task content (pass original text to preserve casing)
+    let taskTitle = this.extractTaskTitle(cleanText, originalText);
     
     // If no explicit trigger found, assume the whole text is a task
-    if (!isTaskCommand && taskTitle === cleanText) {
-      taskTitle = this.capitalizeFirst(transcript.trim());
+    if (!isTaskCommand && taskTitle.toLowerCase() === cleanText) {
+      taskTitle = this.capitalizeFirst(originalText);
     }
 
     const priority = this.extractPriority(cleanText);
@@ -147,46 +148,63 @@ export class VoiceTaskParser {
     };
   }
 
-  private static extractTaskTitle(text: string): string {
-    let title = text;
+  private static extractTaskTitle(text: string, originalText: string): string {
+    let title = text; // lowercased version for pattern matching
+    let originalTitle = originalText; // preserve original casing
 
-    // Remove common trigger phrases
+    // Remove common trigger phrases with better whitespace handling
     for (const trigger of this.TASK_TRIGGERS) {
-      const regex = new RegExp(`\\b${trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      // Handle multiple spaces and optional colons
+      const escapedTrigger = trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      const regex = new RegExp(`\\b${escapedTrigger}\\s*:?\\s*`, 'gi');
       title = title.replace(regex, '').trim();
+      originalTitle = originalTitle.replace(regex, '').trim();
     }
+    
+    // Also remove category + "task" combinations (e.g., "work task")
+    const categoryNames = Object.keys(this.CATEGORY_KEYWORDS);
+    categoryNames.forEach(category => {
+      const regex = new RegExp(`\\b${category}\\s+task\\s*:?\\s*`, 'gi');
+      title = title.replace(regex, '').trim();
+      originalTitle = originalTitle.replace(regex, '').trim();
+    });
 
     // Remove colons that might be left after trigger removal
     title = title.replace(/^:\s*/, '').trim();
+    originalTitle = originalTitle.replace(/^:\s*/, '').trim();
 
     // Remove description patterns
     title = title.replace(/\bdescription:?\s*.+/i, '').trim();
+    originalTitle = originalTitle.replace(/\bdescription:?\s*.+/i, '').trim();
     title = title.replace(/\bnote:?\s*.+/i, '').trim();
+    originalTitle = originalTitle.replace(/\bnote:?\s*.+/i, '').trim();
     title = title.replace(/\bdetails:?\s*.+/i, '').trim();
+    originalTitle = originalTitle.replace(/\bdetails:?\s*.+/i, '').trim();
     title = title.replace(/\bwith:?\s*.+/i, '').trim();
+    originalTitle = originalTitle.replace(/\bwith:?\s*.+/i, '').trim();
 
     // Remove time-related phrases that were extracted
     for (const timePattern of this.TIME_PATTERNS) {
       title = title.replace(timePattern.pattern, '').trim();
+      originalTitle = originalTitle.replace(timePattern.pattern, '').trim();
     }
 
     // Remove priority keywords
     Object.values(this.PRIORITY_KEYWORDS).flat().forEach(keyword => {
       const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
       title = title.replace(regex, '').trim();
+      originalTitle = originalTitle.replace(regex, '').trim();
     });
 
-    // Remove category keywords
-    Object.values(this.CATEGORY_KEYWORDS).flat().forEach(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-      title = title.replace(regex, '').trim();
-    });
+    // Don't remove category keywords as they're often part of the task title (e.g., "buy groceries")
 
     // Clean up extra whitespace and connecting words
     title = title.replace(/\b(to|and|also|please)\b/gi, ' ').trim();
+    originalTitle = originalTitle.replace(/\b(to|and|also|please)\b/gi, ' ').trim();
     title = title.replace(/\s+/g, ' ').trim();
+    originalTitle = originalTitle.replace(/\s+/g, ' ').trim();
 
-    return this.capitalizeFirst(title);
+    return this.capitalizeFirst(originalTitle);
   }
 
   private static extractPriority(text: string): 'low' | 'medium' | 'high' | undefined {

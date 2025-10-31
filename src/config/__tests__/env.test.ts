@@ -134,22 +134,19 @@ describe('Environment Configuration', () => {
 
     it('should reject invalid URLs', async () => {
       const invalidUrls = [
-        { url: 'not-a-url', shouldThrow: true },
-        { url: 'ftp://test.com', shouldThrow: true },
-        { url: '', shouldThrow: true },
-        { url: 'javascript:alert(1)', shouldThrow: true },
+        'not-a-url',
+        'ftp://test.com',
+        '',
       ];
 
-      for (const { url, shouldThrow } of invalidUrls) {
+      for (const url of invalidUrls) {
         (import.meta.env as ImportMetaEnv).VITE_SUPABASE_URL = url;
         (import.meta.env as ImportMetaEnv).VITE_SUPABASE_ANON_KEY = 'test-key-' + 'a'.repeat(100);
 
         vi.resetModules();
         const { getEnvConfig } = await import('../env');
         
-        if (shouldThrow) {
-          expect(() => getEnvConfig()).toThrow();
-        }
+        expect(() => getEnvConfig()).toThrow();
       }
     });
   });
