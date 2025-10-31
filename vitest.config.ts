@@ -14,11 +14,12 @@ export default defineConfig({
       '**/dist/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
-      '**/AppData/**',
-      '**/.vscode/**',
-      '**/.cursor/**',
-      '**/.windsurf/**',
-      '**/Local Settings/**',
+      // Exclude all external directories
+      '**/{AppData,Local Settings,Application Data}/**',
+      '**/.{vscode,cursor,windsurf}/**',
+      '**/C:/**',
+      '**/Users/**',
+      '!**/OneDrive/Робочий стіл/code/код/code/Projects/ScrumLaunch/TaskBuddy Voice/TaskBuddyVoice/**',
     ],
     coverage: {
       provider: 'v8',

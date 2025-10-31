@@ -5,8 +5,11 @@ import { vi } from 'vitest';
  * Provides a comprehensive mock for testing Supabase interactions
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MockData = any[];
+
 export const createMockSupabaseClient = () => {
-  const mockData: any[] = [];
+  const mockData: MockData = [];
   
   const mockSelect = vi.fn().mockReturnThis();
   const mockInsert = vi.fn().mockReturnThis();
@@ -17,7 +20,7 @@ export const createMockSupabaseClient = () => {
   const mockSingle = vi.fn().mockResolvedValue({ data: null, error: null });
   const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
-  const mockFrom = vi.fn((table: string) => ({
+  const mockFrom = vi.fn((_table: string) => ({
     select: mockSelect,
     insert: mockInsert,
     update: mockUpdate,
@@ -30,7 +33,7 @@ export const createMockSupabaseClient = () => {
 
   const mockChannel = vi.fn(() => ({
     on: vi.fn().mockReturnThis(),
-    subscribe: vi.fn((callback) => {
+    subscribe: vi.fn((callback?: (status: string) => void) => {
       if (callback) callback('SUBSCRIBED');
       return { unsubscribe: vi.fn() };
     }),
@@ -56,7 +59,7 @@ export const createMockSupabaseClient = () => {
       error: null,
     }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
-    onAuthStateChange: vi.fn((callback) => {
+    onAuthStateChange: vi.fn(() => {
       return {
         data: {
           subscription: {
@@ -73,12 +76,14 @@ export const createMockSupabaseClient = () => {
     removeChannel: mockRemoveChannel,
     auth: mockAuth,
     // Helper to set mock data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __setMockData: (data: any[]) => {
       mockData.length = 0;
       mockData.push(...data);
       mockSelect.mockResolvedValue({ data, error: null });
     },
     // Helper to set mock error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __setMockError: (error: any) => {
       mockSelect.mockResolvedValue({ data: null, error });
       mockInsert.mockResolvedValue({ data: null, error });

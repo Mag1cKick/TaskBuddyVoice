@@ -31,6 +31,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 // Mock ResizeObserver
@@ -39,6 +40,7 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 // Mock Web Speech API
@@ -67,6 +69,7 @@ Object.defineProperty(window, 'webkitSpeechRecognition', {
 // Suppress console errors in tests (optional)
 const originalError = console.error;
 beforeAll(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   console.error = (...args: any[]) => {
     // Suppress React act() warnings in tests
     if (

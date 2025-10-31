@@ -156,6 +156,15 @@ export class VoiceTaskParser {
       title = title.replace(regex, '').trim();
     }
 
+    // Remove colons that might be left after trigger removal
+    title = title.replace(/^:\s*/, '').trim();
+
+    // Remove description patterns
+    title = title.replace(/\bdescription:?\s*.+/i, '').trim();
+    title = title.replace(/\bnote:?\s*.+/i, '').trim();
+    title = title.replace(/\bdetails:?\s*.+/i, '').trim();
+    title = title.replace(/\bwith:?\s*.+/i, '').trim();
+
     // Remove time-related phrases that were extracted
     for (const timePattern of this.TIME_PATTERNS) {
       title = title.replace(timePattern.pattern, '').trim();
@@ -163,6 +172,12 @@ export class VoiceTaskParser {
 
     // Remove priority keywords
     Object.values(this.PRIORITY_KEYWORDS).flat().forEach(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      title = title.replace(regex, '').trim();
+    });
+
+    // Remove category keywords
+    Object.values(this.CATEGORY_KEYWORDS).flat().forEach(keyword => {
       const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
       title = title.replace(regex, '').trim();
     });
@@ -175,9 +190,13 @@ export class VoiceTaskParser {
   }
 
   private static extractPriority(text: string): 'low' | 'medium' | 'high' | undefined {
-    for (const [priority, keywords] of Object.entries(this.PRIORITY_KEYWORDS)) {
+    // Check in order: high -> medium -> low (most specific first)
+    const priorityOrder: Array<'high' | 'medium' | 'low'> = ['high', 'medium', 'low'];
+    
+    for (const priority of priorityOrder) {
+      const keywords = this.PRIORITY_KEYWORDS[priority];
       if (keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
-        return priority as 'low' | 'medium' | 'high';
+        return priority;
       }
     }
     return undefined;
@@ -336,11 +355,12 @@ export class VoiceTaskParser {
           const month = this.getMonthNumber(monthMatch[1]);
           const day = parseInt(monthMatch[2]);
           const year = now.getFullYear();
-          const targetDate = new Date(year, month - 1, day);
+          // Use UTC to avoid timezone issues
+          const targetDate = new Date(Date.UTC(year, month - 1, day));
           
           // If the date has passed this year, use next year
           if (targetDate < now) {
-            targetDate.setFullYear(year + 1);
+            targetDate.setUTCFullYear(year + 1);
           }
           
           return targetDate.toISOString().split('T')[0];
@@ -406,10 +426,11 @@ export class VoiceTaskParser {
       case 'christmas': {
         const yearMatch = match.match(/(\d{4})/);
         const year = yearMatch ? parseInt(yearMatch[1]) : now.getFullYear();
-        const christmas = new Date(year, 11, 25); // December 25th
+        // Use UTC to avoid timezone issues
+        const christmas = new Date(Date.UTC(year, 11, 25)); // December 25th
         
         if (!yearMatch && christmas < now) {
-          christmas.setFullYear(year + 1);
+          christmas.setUTCFullYear(year + 1);
         }
         
         return christmas.toISOString().split('T')[0];
@@ -418,17 +439,19 @@ export class VoiceTaskParser {
       case 'new_year': {
         const yearMatch = match.match(/(\d{4})/);
         const year = yearMatch ? parseInt(yearMatch[1]) : now.getFullYear() + 1;
-        const newYear = new Date(year, 0, 1); // January 1st
+        // Use UTC to avoid timezone issues
+        const newYear = new Date(Date.UTC(year, 0, 1)); // January 1st
         return newYear.toISOString().split('T')[0];
       }
       
       case 'halloween': {
         const yearMatch = match.match(/(\d{4})/);
         const year = yearMatch ? parseInt(yearMatch[1]) : now.getFullYear();
-        const halloween = new Date(year, 9, 31); // October 31st
+        // Use UTC to avoid timezone issues
+        const halloween = new Date(Date.UTC(year, 9, 31)); // October 31st
         
         if (!yearMatch && halloween < now) {
-          halloween.setFullYear(year + 1);
+          halloween.setUTCFullYear(year + 1);
         }
         
         return halloween.toISOString().split('T')[0];
@@ -574,6 +597,13 @@ export class VoiceTaskParser {
 
   private static capitalizeFirst(str: string): string {
     if (!str) return str;
+    
+    // If the string is all uppercase, keep it that way
+    if (str === str.toUpperCase() && str.length > 1) {
+      return str;
+    }
+    
+    // Otherwise, capitalize first letter and keep rest as-is
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
